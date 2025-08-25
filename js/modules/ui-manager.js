@@ -218,9 +218,10 @@ export function setupUIEventListeners() {
     document.getElementById('resetViewBtn').addEventListener('click', () => window.PubSub.publish('RESET_VIEW_REQUESTED'));
 
     // 設定チェックボックス
-    document.getElementById('avoidMountain')?.addEventListener('change', () => {
+    document.getElementById('avoidMountain')?.addEventListener('change', (e) => {
+        const shouldAvoidMountain = e.target.checked;
         // 1. グラフを即座に更新
-        updateGraph();
+        updateGraph(shouldAvoidMountain);
         // 2. グラフの変更を反映するために再描画を要求
         window.PubSub.publish('STATE_CHANGED');
 
