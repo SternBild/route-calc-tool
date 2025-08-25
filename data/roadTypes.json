@@ -1,0 +1,8 @@
+{
+    "default": { "color": "black", "lineWidth": 1, "style": "solid" },
+    "highway": { "color": "red", "lineWidth": 3, "style": "solid" },
+    "prefectural": { "color": "blue", "lineWidth": 2, "style": "solid" },
+    "city": { "color": "green", "lineWidth": 1.5, "style": "solid" },
+    "mountain": { "color": "brown", "lineWidth": 1, "style": "dashed" },
+    "river": { "color": "cyan", "lineWidth": 1, "style": "dotted" }
+}

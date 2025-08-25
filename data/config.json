@@ -1,0 +1,15 @@
+{
+    "pathfinding": {
+        "avoidRoadTypes": ["mountain"],
+        "kShortestPaths": 3
+    },
+    "rendering": {
+        "routeColors": ["#ffd700", "#00bfff", "#32cd32"],
+        "nodeColors": {
+            "start": "green",
+            "end": "red",
+            "via": "orange",
+            "default": "lightblue"
+        }
+    }
+}

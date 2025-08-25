@@ -3,7 +3,7 @@
 // ==================================================================================
 import {
     getState, setData, setGraph, clearSelection, resetView as resetViewFromState,
-    setSelectedRoute, toggleShowAllPaths, setPathResults
+    setSelectedRoute, toggleShowAllPaths, setPathResults, setConfig, setRoadTypes
 } from './modules/state.js';
 import { initializeMap, drawMap } from './modules/map-renderer.js';
 import { buildFilteredGraph, findTopRoutes } from './modules/pathfinding.js';
@@ -49,8 +49,8 @@ function getRoadSettings() {
  */
 function updateGraph() {
     const { edges } = getState();
-    const roadSettings = getRoadSettings();
-    const filteredGraph = buildFilteredGraph(edges, roadSettings);
+    // todo: avoidMountainチェックボックスの処理を汎用化する
+    const filteredGraph = buildFilteredGraph(edges);
     setGraph(filteredGraph);
 }
 
@@ -71,7 +71,7 @@ export function calculatePath() {
         return;
     }
 
-    const routeResults = findTopRoutes(points, state.graph, 3);
+    const routeResults = findTopRoutes(points, state.graph);
     if (routeResults.length === 0) {
         alert("経路が見つかりませんでした。設定を変更してみてください。");
         setPathResults({ shortestPath: [], allRouteResults: [] });
@@ -132,15 +132,23 @@ export function showAllPaths() {
  */
 async function loadData() {
     try {
-        const [nodesRes, hiddenNodesRes, edgesRes] = await Promise.all([
+        const [nodesRes, hiddenNodesRes, edgesRes, configRes, roadTypesRes] = await Promise.all([
             fetch('data/nodes.json'),
             fetch('data/hiddenNodes.json'),
-            fetch('data/edges.json')
+            fetch('data/edges.json'),
+            fetch('data/config.json'),
+            fetch('data/roadTypes.json')
         ]);
         const nodes = await nodesRes.json();
         const hiddenNodes = await hiddenNodesRes.json();
         const edges = await edgesRes.json();
+        const config = await configRes.json();
+        const roadTypes = await roadTypesRes.json();
+
         setData({ nodes, hiddenNodes, edges, allNodes: { ...nodes, ...hiddenNodes } });
+        setConfig(config);
+        setRoadTypes(roadTypes);
+
     } catch (error) {
         console.error("データの読み込みに失敗しました:", error);
         document.getElementById('container').innerHTML = '<h1>エラー</h1><p>地図データの読み込みに失敗しました。ページを再読み込みしてください。</p>';

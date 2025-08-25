@@ -1,5 +1,5 @@
 // Canvasへの描画を担当するモジュール
-import { getState, roadTypes, isHiddenNode } from './state.js';
+import { getState, isHiddenNode } from './state.js';
 
 let ctx;
 let canvas;
@@ -32,7 +32,8 @@ function restoreViewTransform() {
 }
 
 function getRouteDisplayColor(routeIndex) {
-    const colors = ["#ffd700", "#00bfff", "#32cd32"]; // yellow, cyan, lime
+    const { config } = getState();
+    const colors = config.rendering?.routeColors || ["#ffd700", "#00bfff", "#32cd32"];
     return colors[routeIndex % colors.length];
 }
 
@@ -51,7 +52,7 @@ export function drawMap() {
     const {
         nodes, allNodes, edges, viewState, start, end, viaNodes,
         shortestPath, allRouteResults, showingAllPaths,
-        selectedRouteIndex, selectedPathIndex
+        selectedRouteIndex, selectedPathIndex, roadTypes, config
     } = state;
     const { scale } = viewState;
 
@@ -61,14 +62,12 @@ export function drawMap() {
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     applyViewTransform();
 
-    const roadSettings = {
-        avoidMountain: document.getElementById("avoidMountain")?.checked ?? true
-    };
+    const avoidRoadTypes = config.pathfinding?.avoidRoadTypes || [];
 
     // Draw edges
     edges.forEach((edge) => {
         const [a, b, d, roadType = "default"] = edge;
-        let isRoadDisabled = roadSettings.avoidMountain && roadType === "mountain";
+        let isRoadDisabled = avoidRoadTypes.includes(roadType);
 
         const [x1, y1] = allNodes[a] || [0, 0];
         const [x2, y2] = allNodes[b] || [0, 0];
@@ -176,9 +175,10 @@ export function drawMap() {
         ctx.strokeStyle = isInAnyPath ? "orange" : "black";
         ctx.lineWidth = (isInAnyPath ? 3 : 1) / scale;
 
-        ctx.fillStyle = (name === start) ? "green" :
-                       (name === end) ? "red" :
-                       (viaNodes.includes(name) ? "orange" : "lightblue");
+        const nodeColors = config.rendering?.nodeColors || { start: "green", end: "red", via: "orange", default: "lightblue" };
+        ctx.fillStyle = (name === start) ? nodeColors.start :
+                       (name === end) ? nodeColors.end :
+                       (viaNodes.includes(name) ? nodeColors.via : nodeColors.default);
         ctx.fill();
         ctx.stroke();
 
