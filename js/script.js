@@ -72,10 +72,10 @@ let canvas;
  * 現在の道路設定（UIから）に基づいて、経路探索用のグラフを更新します。
  * `state.js`からエッジリストを取得し、設定に基づいてフィルタリングしたグラフを構築して、
  * アプリケーションの状態に設定します。
+ * @param {boolean} avoidMountain - 山道を回避するかどうかのフラグ
  */
-export function updateGraph() {
+export function updateGraph(avoidMountain) {
     const { edges, config } = getState();
-    const avoidMountain = document.getElementById("avoidMountain")?.checked;
 
     // 設定から回避する道路タイプを決定
     const avoidRoadTypes = avoidMountain ? (config.pathfinding?.avoidRoadTypesOnMountainCheck || []) : [];
@@ -95,7 +95,9 @@ export function calculatePath() {
         return;
     }
 
-    updateGraph(); // グラフを最新の設定で再構築
+    // グラフを最新の設定で再構築
+    const avoidMountain = document.getElementById("avoidMountain")?.checked;
+    updateGraph(avoidMountain);
 
     const points = [state.start, ...state.viaNodes, state.end];
 
@@ -213,7 +215,9 @@ async function initialize() {
 
         // 2. モジュールの初期化
         initializeMap(canvas);
-        updateGraph(); // 初期グラフを構築
+        // UIの初期状態に基づいてグラフを構築
+        const initialAvoidMountain = document.getElementById("avoidMountain")?.checked;
+        updateGraph(initialAvoidMountain);
         updateInfoPanel();
         updateZoomInfo();
 
