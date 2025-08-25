@@ -11,7 +11,7 @@
 <div id="container">
 <h1>路程計算ツール
     <span id="version">v1.1</span>
-    <button id="printButton" onclick="printPDF()">PDF出力</button>
+<button id="printButton">PDF出力</button>
 </h1>
 <div id="mainContainer">
     <div id="mapContainer">
@@ -27,9 +27,9 @@
         </div>
         <div id="controls">
             <h4>操作</h4>
-            <button onclick="calculatePath()">経路を計算</button>
-            <button onclick="clearAll()">選択地点をクリア</button>
-            <button onclick="resetView()">表示位置リセット</button>
+            <button id="calculatePathBtn">経路を計算</button>
+            <button id="clearAllBtn">選択地点をクリア</button>
+            <button id="resetViewBtn">表示位置リセット</button>
         </div>
         <div id="roadOptions">
             <h4>設定</h4>
@@ -52,6 +52,6 @@
 <div id="result"></div>
 </div>
 
-<script src="js/script.js" defer></script>
+<script src="js/script.js" type="module"></script>
 </body>
 </html>
