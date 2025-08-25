@@ -1,4 +1,5 @@
 // 経路探索アルゴリズムを担当するモジュール
+import { getState } from './state.js';
 
 /**
  * 道路設定に基づいてフィルターされたグラフを構築する
@@ -6,13 +7,15 @@
  * @param {Object} roadSettings - 道路設定 (e.g., { avoidMountain: true })
  * @returns {Object} フィルターされたグラフ
  */
-export function buildFilteredGraph(edges, roadSettings) {
+export function buildFilteredGraph(edges) {
+    const { config } = getState();
+    const avoidRoadTypes = config.pathfinding?.avoidRoadTypes || [];
     const filteredGraph = {};
 
     for (let edge of edges) {
         const [a, b, d, roadType = "default"] = edge;
 
-        if (roadSettings.avoidMountain && roadType === "mountain") {
+        if (avoidRoadTypes.includes(roadType)) {
             continue;
         }
 
@@ -206,10 +209,13 @@ function findAllShortestPaths(points, graph) {
  * @param {number} maxRoutes - 見つける候補の最大数
  * @returns {Array<{distance: number, paths: Array<Array<string>>}>}
  */
-export function findTopRoutes(points, graph, maxRoutes = 3) {
+export function findTopRoutes(points, graph) {
+    const { config } = getState();
+    const k = config.pathfinding?.kShortestPaths || 3;
+
     if (points.length === 2) {
         // 経由地がない場合はYen's algorithmで複数候補を探す
-        return findTopKPaths(points[0], points[1], graph, maxRoutes)
+        return findTopKPaths(points[0], points[1], graph, k)
             .map(r => ({ distance: r.distance, paths: [r.path] }));
     }
     // 経由地がある場合は、最短距離の組み合わせのみを探す

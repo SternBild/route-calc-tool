@@ -1,14 +1,5 @@
 // アプリケーションの状態を管理するモジュール
 
-export const roadTypes = {
-    "default": { color: "black", lineWidth: 1, style: "solid" },
-    "highway": { color: "red", lineWidth: 3, style: "solid" },
-    "prefectural": { color: "blue", lineWidth: 2, style: "solid" },
-    "city": { color: "green", lineWidth: 1.5, style: "solid" },
-    "mountain": { color: "brown", lineWidth: 1, style: "dashed" },
-    "river": { color: "cyan", lineWidth: 1, style: "dotted" }
-};
-
 export const MAX_VIA = 5;
 
 const state = {
@@ -17,6 +8,8 @@ const state = {
     edges: [],
     allNodes: {},
     graph: {},
+    config: {},
+    roadTypes: {},
 
     viewState: {
         scale: 1.0,
@@ -46,6 +39,14 @@ export function setData({ nodes, hiddenNodes, edges, allNodes }) {
     state.hiddenNodes = hiddenNodes;
     state.edges = edges;
     state.allNodes = allNodes;
+}
+
+export function setConfig(newConfig) {
+    state.config = newConfig;
+}
+
+export function setRoadTypes(newRoadTypes) {
+    state.roadTypes = newRoadTypes;
 }
 
 export function setGraph(graph) {
