@@ -73,7 +73,7 @@ let canvas;
  * `state.js`からエッジリストを取得し、設定に基づいてフィルタリングしたグラフを構築して、
  * アプリケーションの状態に設定します。
  */
-function updateGraph() {
+export function updateGraph() {
     const { edges, config } = getState();
     const avoidMountain = document.getElementById("avoidMountain")?.checked;
 
