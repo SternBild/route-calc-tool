@@ -30,7 +30,32 @@
 
 ## 技術的な詳細
 
-このツールは、外部ライブラリ（`html2canvas`, `jspdf`）を除き、単一の`index.html`ファイル内にHTML, CSS, JavaScriptがすべて記述されています。地図の描画にはHTML Canvas APIが使用されています。
+このツールは、HTML5, CSS3, および モダンなJavaScript (ES Modules) で構築されています。地図の描画にはHTML Canvas APIが使用されており、インタラクティブな機能を実現しています。経路計算アルゴリズムやUIの管理は、役割ごとにモジュール化されたJavaScriptファイルによって実装されています。
+
+外部ライブラリとして、PDF出力機能のために `html2canvas` と `jspdf` を利用しています。
+
+## コード構造
+
+このプロジェクトのJavaScriptコードは、保守性と再利用性を高めるために、以下のモジュールに分割されています。
+
+-   `js/script.js`: **エントリーポイント**
+    -   アプリケーション全体の初期化と、各モジュールの連携を統括します。
+    -   モジュール間の通信にはPub/Subパターンを使用しています。
+
+-   `js/modules/state.js`: **状態管理**
+    -   アプリケーションのすべての状態（ノード、経路、表示設定など）を一元管理する「Single Source of Truth」です。
+
+-   `js/modules/map-renderer.js`: **地図描画**
+    -   `state.js` の情報に基づき、Canvas上に地図、地点、道路、計算された経路などをすべて描画します。
+
+-   `js/modules/pathfinding.js`: **経路計算**
+    -   ダイクストラ法やYenのK-shortest pathアルゴリズムなど、経路探索のコアとなる計算処理を実装しています。
+
+-   `js/modules/ui-manager.js`: **UI管理**
+    -   情報パネルや結果表示エリアなど、HTML要素の表示更新を担当します。PDF出力機能もここに実装されています。
+
+-   `js/modules/event-handler.js`: **イベント処理**
+    -   地図上でのマウス操作（クリック、ドラッグ、ズーム）を検知し、対応する処理を呼び出します。
 
 ## ライセンス
 

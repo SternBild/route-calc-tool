@@ -1,5 +1,14 @@
+/**
+ * @file 路程計算ツールのエントリーポイントです。
+ *
+ * このファイルはアプリケーション全体の初期化、モジュール間の連携、
+ * および主要なユーザーアクションの処理を担当します。
+ * 各機能はモジュールに分割されており、このスクリプトがそれらを統括します。
+ * モジュール間の通信には、Pub/Sub（Publish/Subscribe）パターンを使用しています。
+ */
+
 // ==================================================================================
-// Entry Point: アプリケーションの初期化とモジュールの連携
+// Imports
 // ==================================================================================
 import {
     getState, setData, setGraph, clearSelection, resetView as resetViewFromState,
@@ -13,14 +22,35 @@ import {
 } from './modules/ui-manager.js';
 import { setupCanvasEventListeners } from './modules/event-handler.js';
 
-// --- Pub/Sub ---
-// モジュール間の疎結合な連携を実現するための簡易的なPub/Sub
+// ==================================================================================
+// Pub/Sub Implementation
+// ==================================================================================
+/**
+ * @namespace PubSub
+ * @description
+ * アプリケーション全体で使用される単純なPublish/Subscribeシステム。
+ * これにより、各モジュールは互いに直接依存することなく、疎結合な連携が可能になります。
+ * 例えば、UIモジュールは経路計算の完了を直接知る必要がなく、
+ * 'PATH_CALCULATED'のようなイベントを購読するだけで済みます。
+ *
+ * @property {Object.<string, Array<Function>>} events - イベント名とコールバック関数のリストを格納するオブジェクト。
+ * @method subscribe - イベントを購読（登録）します。
+ * @method publish - イベントを発行し、登録されたコールバックをすべて実行します。
+ */
 window.PubSub = {
     events: {},
+    /**
+     * @param {string} eventName - 購読するイベントの名前。
+     * @param {Function} fn - イベント発行時に実行されるコールバック関数。
+     */
     subscribe: function(eventName, fn) {
         this.events[eventName] = this.events[eventName] || [];
         this.events[eventName].push(fn);
     },
+    /**
+     * @param {string} eventName - 発行するイベントの名前。
+     * @param {*} [data] - コールバック関数に渡すデータ。
+     */
     publish: function(eventName, data) {
         if (this.events[eventName]) {
             this.events[eventName].forEach(fn => fn(data));
@@ -28,34 +58,35 @@ window.PubSub = {
     }
 };
 
-// --- DOM Elements ---
+// ==================================================================================
+// Global Variables
+// ==================================================================================
+/** @type {HTMLCanvasElement} - 地図描画用のメインCanvas要素 */
 let canvas;
 
-// --- Main Application Logic ---
+// ==================================================================================
+// Main Application Logic
+// ==================================================================================
 
 /**
- * 道路設定を取得する
- * @returns {{avoidMountain: boolean}}
- */
-function getRoadSettings() {
-    const checkbox = document.getElementById("avoidMountain");
-    return {
-        avoidMountain: checkbox ? checkbox.checked : true
-    };
-}
-
-/**
- * 道路設定が変更されたときにグラフを更新する
+ * 現在の道路設定（UIから）に基づいて、経路探索用のグラフを更新します。
+ * `state.js`からエッジリストを取得し、設定に基づいてフィルタリングしたグラフを構築して、
+ * アプリケーションの状態に設定します。
  */
 function updateGraph() {
-    const { edges } = getState();
-    // todo: avoidMountainチェックボックスの処理を汎用化する
-    const filteredGraph = buildFilteredGraph(edges);
+    const { edges, config } = getState();
+    const avoidMountain = document.getElementById("avoidMountain")?.checked;
+
+    // 設定から回避する道路タイプを決定
+    const avoidRoadTypes = avoidMountain ? (config.pathfinding?.avoidRoadTypesOnMountainCheck || []) : [];
+
+    const filteredGraph = buildFilteredGraph(edges, avoidRoadTypes);
     setGraph(filteredGraph);
 }
 
 /**
- * 経路を計算して表示を更新する
+ * 経路計算を実行し、結果を表示します。
+ * この関数はUIの「経路を計算」ボタンから、または設定変更時にPub/Sub経由で呼び出されます。
  */
 export function calculatePath() {
     const state = getState();
@@ -63,15 +94,19 @@ export function calculatePath() {
         alert("出発地点と到着地点を選択してください。");
         return;
     }
+
     updateGraph(); // グラフを最新の設定で再構築
 
     const points = [state.start, ...state.viaNodes, state.end];
+
+    // 選択された地点が現在のグラフに存在するかチェック
     if (points.some(p => !state.graph[p] || Object.keys(state.graph[p]).length === 0)) {
-        alert("選択された地点のいずれかが接続されていません。設定を確認してください。");
+        alert("選択された地点のいずれかが、現在の設定では到達不可能な場所にあります（例：山道設定により孤立）。設定を確認してください。");
         return;
     }
 
     const routeResults = findTopRoutes(points, state.graph);
+
     if (routeResults.length === 0) {
         alert("経路が見つかりませんでした。設定を変更してみてください。");
         setPathResults({ shortestPath: [], allRouteResults: [] });
@@ -83,11 +118,11 @@ export function calculatePath() {
     }
 
     updateResultDisplay();
-    drawMap();
+    drawMap(); // Pub/Sub経由でも良いが、直接呼び出す方が明確
 }
 
 /**
- * 全ての選択と結果をクリアする
+ * ユーザーによる選択（出発地、目的地、経由地）と計算結果をすべてクリアします。
  */
 export function clearAll() {
     clearSelection();
@@ -97,7 +132,7 @@ export function clearAll() {
 }
 
 /**
- * 表示をリセットする
+ * 地図の表示位置とズームを初期状態にリセットします。
  */
 export function resetView() {
     resetViewFromState();
@@ -106,9 +141,9 @@ export function resetView() {
 }
 
 /**
- * 表示する経路を選択する
- * @param {number} routeIndex
- * @param {number} pathIndex
+ * 表示する経路をユーザーが選択した際に呼び出されます。
+ * @param {number} routeIndex - 選択された経路候補のインデックス (e.g., 0 for 最短)。
+ * @param {number} pathIndex - 同じ距離の経路が複数ある場合のインデックス。
  */
 export function selectRoute(routeIndex, pathIndex) {
     setSelectedRoute(routeIndex, pathIndex);
@@ -117,7 +152,7 @@ export function selectRoute(routeIndex, pathIndex) {
 }
 
 /**
- * 全経路表示モードを切り替える
+ * 全経路表示モードのオン/オフを切り替えます。
  */
 export function showAllPaths() {
     toggleShowAllPaths();
@@ -125,10 +160,14 @@ export function showAllPaths() {
     drawMap();
 }
 
-// --- Initialization ---
+// ==================================================================================
+// Initialization
+// ==================================================================================
 
 /**
- * 必要なデータをフェッチする
+ * アプリケーションに必要なすべてのJSONデータを非同期で読み込みます。
+ * 読み込みが失敗した場合は、エラーメッセージを表示します。
+ * @returns {Promise<void>}
  */
 async function loadData() {
     try {
@@ -145,6 +184,7 @@ async function loadData() {
         const config = await configRes.json();
         const roadTypes = await roadTypesRes.json();
 
+        // 取得したデータをstateモジュールに保存
         setData({ nodes, hiddenNodes, edges, allNodes: { ...nodes, ...hiddenNodes } });
         setConfig(config);
         setRoadTypes(roadTypes);
@@ -152,12 +192,13 @@ async function loadData() {
     } catch (error) {
         console.error("データの読み込みに失敗しました:", error);
         document.getElementById('container').innerHTML = '<h1>エラー</h1><p>地図データの読み込みに失敗しました。ページを再読み込みしてください。</p>';
-        throw error;
+        throw error; // 初期化プロセスを中断させる
     }
 }
 
 /**
- * アプリケーションを初期化する
+ * アプリケーション全体の初期化を行います。
+ * DOMの準備が整った後に呼び出されます。
  */
 async function initialize() {
     canvas = document.getElementById("map");
@@ -167,19 +208,21 @@ async function initialize() {
     }
 
     try {
+        // 1. データの読み込み
         await loadData();
 
-        // モジュールの初期化
+        // 2. モジュールの初期化
         initializeMap(canvas);
-        updateGraph();
+        updateGraph(); // 初期グラフを構築
         updateInfoPanel();
         updateZoomInfo();
 
-        // イベントリスナーの設定
-        setupCanvasEventListeners(canvas);
-        setupUIEventListeners();
+        // 3. イベントリスナーの設定
+        setupCanvasEventListeners(canvas); // 地図操作のリスナー
+        setupUIEventListeners();         // UI要素（ボタンなど）のリスナー
 
-        // Pub/Sub イベントの購読設定
+        // 4. Pub/Sub イベントの購読設定
+        //    各モジュールからのイベント通知を受け取り、関連する更新処理を実行する
         window.PubSub.subscribe('STATE_CHANGED', () => drawMap());
         window.PubSub.subscribe('VIEW_CHANGED', () => {
             drawMap();
@@ -191,13 +234,15 @@ async function initialize() {
         window.PubSub.subscribe('SELECT_ROUTE_REQUESTED', (data) => selectRoute(data.routeIndex, data.pathIndex));
         window.PubSub.subscribe('SHOW_ALL_PATHS_REQUESTED', showAllPaths);
 
-        // 初回描画
+        // 5. 初回描画
         drawMap();
 
     } catch (error) {
+        // loadDataでエラーがスローされた場合、ここでキャッチされる
         console.error("アプリケーションの初期化に失敗しました。");
     }
 }
 
-// DOMが読み込まれたらアプリケーションを起動
+// --- Application Start ---
+// DOMが完全に読み込まれたら、アプリケーションの初期化処理を開始します。
 document.addEventListener('DOMContentLoaded', initialize);
