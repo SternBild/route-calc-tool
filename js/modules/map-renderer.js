@@ -106,12 +106,13 @@ export function drawMap() {
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     applyViewTransform();
 
-    const avoidRoadTypes = document.getElementById("avoidMountain")?.checked ? (config.pathfinding?.avoidRoadTypesOnMountainCheck || []) : [];
-
     // 2. エッジ（道路）の描画
     edges.forEach((edge) => {
         const [a, b, d, roadType = "default"] = edge;
-        const isRoadDisabled = avoidRoadTypes.includes(roadType);
+
+        // グラフの状態を信頼できる唯一の情報源として、道路が有効かどうかを判断する
+        const isRoadEnabled = state.graph[a]?.[b];
+        const isRoadDisabled = !isRoadEnabled;
 
         const [x1, y1] = allNodes[a] || [0, 0];
         const [x2, y2] = allNodes[b] || [0, 0];
