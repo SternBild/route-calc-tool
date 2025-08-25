@@ -7,6 +7,7 @@
  * PDF出力機能もこのモジュールに含まれます。
  */
 import { getState, removeViaNode as removeViaNodeFromState, isHiddenNode } from './state.js';
+import { updateGraph } from '../script.js';
 
 /**
  * 距離の数値を整形します。整数ならそのまま、小数なら小数点以下1桁に丸めます。
@@ -218,13 +219,15 @@ export function setupUIEventListeners() {
 
     // 設定チェックボックス
     document.getElementById('avoidMountain')?.addEventListener('change', () => {
+        // 1. グラフを即座に更新
+        updateGraph();
+        // 2. グラフの変更を反映するために再描画を要求
+        window.PubSub.publish('STATE_CHANGED');
+
+        // 3. 既に出発地・到着地が選択されている場合は、経路の再計算を要求
         const { start, end } = getState();
-        // 既に経路計算済みの場合は、設定変更時に自動で再計算
         if (start && end) {
             window.PubSub.publish('CALCULATE_PATH_REQUESTED');
-        } else {
-            // 未計算の場合は、無効な道路の表示を更新するためだけに再描画
-            window.PubSub.publish('STATE_CHANGED');
         }
     });
 }
