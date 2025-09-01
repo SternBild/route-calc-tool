@@ -58,14 +58,19 @@
 
 ```
 route-calc-tool/
-├── index.html          # メインHTMLファイル
+├── index.html              # メインHTMLファイル
 ├── css/
-│   └── styles.css      # スタイルシート
+│   └── styles.css          # スタイルシート
 ├── js/
-│   ├── config.js       # 設定ファイル（UI設定、スタイル等）
-│   ├── data.js         # 地図データ（地点・道路情報）
-│   └── script.js       # メインロジック
-└── README.md           # このファイル
+│   ├── config.js           # 設定ファイル（UI設定、デバッグ設定等）
+│   ├── data.js             # 地図データ（地点・道路情報）
+│   ├── main.js             # メインモジュール（アプリケーション初期化）
+│   ├── path-calculator.js  # 経路計算モジュール（ダイクストラ法、Yenアルゴリズム）
+│   ├── map-renderer.js     # 地図描画モジュール（Canvas描画、座標変換）
+│   ├── event-handlers.js   # イベント処理モジュール（マウス操作、ノード選択）
+│   ├── ui-controller.js    # UI制御モジュール（結果表示、設定管理）
+│   └── pdf-exporter.js     # PDF出力モジュール
+└── README.md               # このファイル
 ```
 
 ### 主要機能の詳細

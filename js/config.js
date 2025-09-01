@@ -124,10 +124,44 @@ const UI_STRINGS = {
 
 // デバッグ設定
 const DEBUG_CONFIG = {
-    enabled: false,        // デバッグモードの有効化
-    showConsoleLog: false, // コンソールログの表示
+    enabled: true,         // デバッグモードの有効化
+    showConsoleLog: true,  // コンソールログの表示
     showAlgorithmSteps: false,  // アルゴリズム実行ステップの表示
-    logPathCalculation: false   // 経路計算ログの表示
+    logPathCalculation: true    // 経路計算ログの表示
+};
+
+// デバッグログ用のヘルパー関数を追加
+const debugLog = {
+    // 通常のログ出力
+    log: (message, ...args) => {
+        if (DEBUG_CONFIG.enabled && DEBUG_CONFIG.showConsoleLog) {
+            console.log(`[路程計算ツール] ${message}`, ...args);
+        }
+    },
+    // エラーログ出力
+    error: (message, error, ...args) => {
+        if (DEBUG_CONFIG.enabled) {
+            console.error(`[路程計算ツール] ERROR: ${message}`, error, ...args);
+        }
+    },
+    // 警告ログ出力
+    warn: (message, ...args) => {
+        if (DEBUG_CONFIG.enabled) {
+            console.warn(`[路程計算ツール] WARNING: ${message}`, ...args);
+        }
+    },
+    // 経路計算ログ出力
+    pathCalculation: (message, ...args) => {
+        if (DEBUG_CONFIG.enabled && DEBUG_CONFIG.logPathCalculation) {
+            console.log(`[経路計算] ${message}`, ...args);
+        }
+    },
+    // アルゴリズムステップログ出力
+    algorithmSteps: (message, ...args) => {
+        if (DEBUG_CONFIG.enabled && DEBUG_CONFIG.showAlgorithmSteps) {
+            console.log(`[アルゴリズム] ${message}`, ...args);
+        }
+    }
 };
 
 // パフォーマンス設定

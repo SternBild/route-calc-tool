@@ -1,25 +1,46 @@
 // 路程計算ツール - 経路計算モジュール
+// 最短経路アルゴリズム（ダイクストラ法、Yenのアルゴリズム）を実装し、複数の経路候補を計算する
 
 // 道路設定に基づいてグラフを構築
+// 山道回避設定等に応じて利用可能な道路をフィルタリングしたグラフを生成
 export function buildFilteredGraph(getRoadSettings) {
-    const roadSettings = getRoadSettings();
-    const filteredGraph = {};
+    try {
+        const roadSettings = getRoadSettings();
+        const filteredGraph = {};
+        debugLog.pathCalculation('グラフ構築開始', { roadSettings });
     
-    for (let edge of edges) {
-        const [a, b, d, roadType = "default"] = edge;
-        
-        // 山道を使用しない設定がONで、かつ道路種別が山道の場合はスキップ
-        if (roadSettings.avoidMountain && roadType === "mountain") {
-            continue;
+        if (!edges || !Array.isArray(edges)) {
+            debugLog.error('エッジデータが無効です', new Error('Invalid edges data'));
+            return {};
         }
         
-        if (!filteredGraph[a]) filteredGraph[a] = {};
-        if (!filteredGraph[b]) filteredGraph[b] = {};
-        filteredGraph[a][b] = d;
-        filteredGraph[b][a] = d;
+        for (let edge of edges) {
+            const [a, b, d, roadType = "default"] = edge;
+            
+            // データの整合性チェック
+            if (!a || !b || typeof d !== 'number' || d <= 0) {
+                debugLog.warn('無効なエッジデータをスキップしました', { edge });
+                continue;
+            }
+            
+            // 山道を使用しない設定がONで、かつ道路種別が山道の場合はスキップ
+            if (roadSettings.avoidMountain && roadType === "mountain") {
+                debugLog.algorithmSteps(`山道をスキップ: ${a} - ${b}`);
+                continue;
+            }
+            
+            if (!filteredGraph[a]) filteredGraph[a] = {};
+            if (!filteredGraph[b]) filteredGraph[b] = {};
+            filteredGraph[a][b] = d;
+            filteredGraph[b][a] = d;
+        }
+        
+        debugLog.pathCalculation('グラフ構築完了', { nodeCount: Object.keys(filteredGraph).length });
+        return filteredGraph;
+    } catch (error) {
+        debugLog.error('グラフ構築中にエラーが発生しました', error);
+        return {};
     }
-    
-    return filteredGraph;
 }
 
 // ダイクストラ法による最短経路計算
@@ -28,15 +49,29 @@ export function dijkstraPath(startNode, endNode, graph) {
 }
 
 function dijkstraPathWithGraph(startNode, endNode, graphData) {
-    const distances = {};
-    const previous = {};
-    const visited = new Set();
-    const queue = [];
+    try {
+        debugLog.algorithmSteps(`ダイクストラ法開始: ${startNode} → ${endNode}`);
+        
+        if (!graphData || typeof graphData !== 'object') {
+            debugLog.error('グラフデータが無効です', new Error('Invalid graph data'));
+            return { path: [], distance: Infinity };
+        }
+        
+        if (!startNode || !endNode) {
+            debugLog.error('開始ノードまたは終了ノードが無効です', new Error('Invalid start or end node'));
+            return { path: [], distance: Infinity };
+        }
+        
+        const distances = {};
+        const previous = {};
+        const visited = new Set();
+        const queue = [];
 
-    // 開始ノードまたは終了ノードがグラフに存在しない場合
-    if (!graphData[startNode] || !graphData[endNode]) {
-        return { path: [], distance: Infinity };
-    }
+        // 開始ノードまたは終了ノードがグラフに存在しない場合
+        if (!graphData[startNode] || !graphData[endNode]) {
+            debugLog.warn('開始ノードまたは終了ノードがグラフに存在しません', { startNode, endNode });
+            return { path: [], distance: Infinity };
+        }
 
     // 初期化
     for (let node in graphData) {
@@ -95,14 +130,33 @@ function dijkstraPathWithGraph(startNode, endNode, graphData) {
         return { path: [], distance: Infinity };
     }
 
-    return { path, distance: distances[endNode] };
+        debugLog.algorithmSteps(`ダイクストラ法完了: 距離=${distances[endNode]}, 経路長=${path.length}`);
+        return { path, distance: distances[endNode] };
+    } catch (error) {
+        debugLog.error('ダイクストラ法実行中にエラーが発生しました', error);
+        return { path: [], distance: Infinity };
+    }
 }
 
-// 修正版：K-shortest paths アルゴリズムを使用してトップ3の経路を取得
-export function findTopKPaths(startNode, endNode, k = 3, graph) {
-    // Yenのアルゴリズムを簡略化した実装
-    const candidatePaths = [];
-    const finalPaths = [];
+// 修正版：K-shortest paths アルゴリズムを使用してトップK個の経路を取得
+// Yenのアルゴリズムを簡略化した実装で、複数の最短経路候補を生成
+export function findTopKPaths(startNode, endNode, k = APP_CONFIG.route.maxRoutes, graph) {
+    try {
+        debugLog.pathCalculation(`K-shortest paths開始: ${startNode} → ${endNode}, k=${k}`);
+        
+        if (!graph || typeof graph !== 'object') {
+            debugLog.error('グラフデータが無効です', new Error('Invalid graph data'));
+            return [];
+        }
+        
+        if (!startNode || !endNode) {
+            debugLog.error('開始ノードまたは終了ノードが無効です', new Error('Invalid start or end node'));
+            return [];
+        }
+        
+        // Yenのアルゴリズムを簡略化した実装
+        const candidatePaths = [];
+        const finalPaths = [];
     
     // 最初の最短経路を取得
     const firstPath = dijkstraPath(startNode, endNode, graph);
@@ -175,20 +229,45 @@ export function findTopKPaths(startNode, endNode, k = 3, graph) {
         finalPaths.push(nextBest);
     }
     
-    return finalPaths;
+        debugLog.pathCalculation(`K-shortest paths完了: ${finalPaths.length}個の経路を発見`);
+        return finalPaths;
+    } catch (error) {
+        debugLog.error('K-shortest paths実行中にエラーが発生しました', error);
+        return [];
+    }
 }
 
 // 経路の距離を計算
+// パス上の全エッジの距離を合計して総距離を算出
 export function calculatePathDistance(path, graph) {
-    let total = 0;
-    for (let i = 0; i < path.length - 1; i++) {
-        if (graph[path[i]] && graph[path[i]][path[i + 1]]) {
-            total += graph[path[i]][path[i + 1]];
-        } else {
+    try {
+        if (!path || !Array.isArray(path) || path.length < 2) {
+            debugLog.warn('無効な経路データです', { path });
             return Infinity;
         }
+        
+        if (!graph || typeof graph !== 'object') {
+            debugLog.error('グラフデータが無効です', new Error('Invalid graph data'));
+            return Infinity;
+        }
+        
+        let total = 0;
+        for (let i = 0; i < path.length - 1; i++) {
+            const from = path[i];
+            const to = path[i + 1];
+            
+            if (graph[from] && graph[from][to]) {
+                total += graph[from][to];
+            } else {
+                debugLog.warn(`エッジが見つかりません: ${from} → ${to}`);
+                return Infinity;
+            }
+        }
+        return total;
+    } catch (error) {
+        debugLog.error('経路距離計算中にエラーが発生しました', error);
+        return Infinity;
     }
-    return total;
 }
 
 // 2点間の最短経路を計算（複数パターン対応）
