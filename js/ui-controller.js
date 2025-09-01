@@ -1,26 +1,59 @@
 // 路程計算ツール - UI制御モジュール
+// 結果表示、インターフェース更新、設定管理などのUI関連機能を管理する
 
 // 数値を適切な精度で表示するヘルパー関数
+// 整数はそのまま、小数は1桁まで表示して不要な0を除去
 export function formatDistance(distance) {
-    if (Number.isInteger(distance)) {
-        return distance.toString();
+    try {
+        if (typeof distance !== 'number' || isNaN(distance)) {
+            debugLog.warn('無効な距離値です', { distance });
+            return '0';
+        }
+        
+        if (Number.isInteger(distance)) {
+            return distance.toString();
+        }
+        // 小数点以下1桁まで表示し、不要な0を削除
+        return parseFloat(distance.toFixed(1)).toString();
+    } catch (error) {
+        debugLog.error('距離フォーマット中にエラーが発生しました', error);
+        return '0';
     }
-    // 小数点以下1桁まで表示し、不要な0を削除
-    return parseFloat(distance.toFixed(1)).toString();
 }
 
 // 車賃（往復）を計算する関数
+// 距離と単価設定に基づいて往復の車賃を算出
 export function calculateCarFare(distance) {
-    const unitPrice = document.getElementById("carFare30").checked ? APP_CONFIG.carFare.defaultUnitPrice : APP_CONFIG.carFare.alternativeUnitPrice;
-    const roundTripDistance = Math.floor(distance * APP_CONFIG.carFare.roundTripMultiplier); // 往復距離（小数点以下切り捨て）
-    const carFare = roundTripDistance * unitPrice;
+    try {
+        if (typeof distance !== 'number' || isNaN(distance) || distance < 0) {
+            debugLog.warn('無効な距離値です', { distance });
+            distance = 0;
+        }
+        
+        const carFare30Element = document.getElementById("carFare30");
+        if (!carFare30Element) {
+            debugLog.warn('車賃設定要素が見つかりません、デフォルト値を使用します');
+        }
+        
+        const unitPrice = (carFare30Element?.checked ?? true) ? APP_CONFIG.carFare.defaultUnitPrice : APP_CONFIG.carFare.alternativeUnitPrice;
+        const roundTripDistance = Math.floor(distance * APP_CONFIG.carFare.roundTripMultiplier); // 往復距離（小数点以下切り捨て）
+        const carFare = roundTripDistance * unitPrice;
     
-    return {
-        unitPrice: unitPrice,
-        roundTripDistance: roundTripDistance,
-        carFare: carFare,
-        calculation: `${formatDistance(distance)} × ${APP_CONFIG.carFare.roundTripMultiplier} = ${distance * APP_CONFIG.carFare.roundTripMultiplier} → ${roundTripDistance}km × ${unitPrice}円 = ${carFare.toLocaleString()}円`
-    };
+        return {
+            unitPrice: unitPrice,
+            roundTripDistance: roundTripDistance,
+            carFare: carFare,
+            calculation: `${formatDistance(distance)} × ${APP_CONFIG.carFare.roundTripMultiplier} = ${distance * APP_CONFIG.carFare.roundTripMultiplier} → ${roundTripDistance}km × ${unitPrice}円 = ${carFare.toLocaleString()}円`
+        };
+    } catch (error) {
+        debugLog.error('車賃計算中にエラーが発生しました', error);
+        return {
+            unitPrice: APP_CONFIG.carFare.defaultUnitPrice,
+            roundTripDistance: 0,
+            carFare: 0,
+            calculation: '計算エラー'
+        };
+    }
 }
 
 // 経路の詳細表示を生成する関数（隠し地点を除外）
@@ -63,12 +96,35 @@ export function formatPathWithDistances(path, isHiddenNode, graph) {
 }
 
 // 中継地点の表示更新
+// 選択された中継地点のリストをUIに表示し、削除ボタンを付加
 export function updateViaNodeDisplay(viaNodes, removeViaNode) {
-    const span = document.getElementById("viaNodeList");
-    if (viaNodes.length === 0) {
-        span.textContent = UI_STRINGS.none;
-    } else {
-        span.innerHTML = viaNodes.map(n => `${n} <button onclick="window.removeViaNode('${n}')">×</button>`).join(" / ");
+    try {
+        const span = document.getElementById("viaNodeList");
+        if (!span) {
+            debugLog.error('中継地点表示要素が見つかりません', new Error('Element not found: viaNodeList'));
+            return;
+        }
+        
+        if (!viaNodes || !Array.isArray(viaNodes)) {
+            debugLog.warn('無効な中継地点データです', { viaNodes });
+            span.textContent = UI_STRINGS.none;
+            return;
+        }
+        
+        if (viaNodes.length === 0) {
+            span.textContent = UI_STRINGS.none;
+        } else {
+            // XSS対策のため、テキストをエスケープしてDOM操作を使用
+            span.innerHTML = viaNodes.map(n => {
+                const escapedNodeName = n.replace(/[<>&"']/g, (match) => {
+                    const escapeMap = { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#x27;' };
+                    return escapeMap[match];
+                });
+                return `${escapedNodeName} <button onclick="window.removeViaNode('${escapedNodeName}')">×</button>`;
+            }).join(" / ");
+        }
+    } catch (error) {
+        debugLog.error('中継地点表示更新中にエラーが発生しました', error);
     }
 }
 
@@ -206,26 +262,51 @@ export function showAllPaths(drawMapCallback) {
 }
 
 // 道路設定変更時のイベントリスナーを設定
+// 山道回避や車賃設定のチェックボックスにイベントリスナーを設定
 export function setupRoadSettingsListeners(drawMapCallback, calculatePathCallback) {
-    const checkboxes = ['avoidMountain', 'carFare30'];
-    checkboxes.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('change', () => {
-                // 道路設定が変更されたら地図を再描画
-                drawMapCallback();
-                
-                // 既に経路が計算されている場合は再計算または結果表示更新
-                const currentState = window.currentState;
-                if (currentState.start && currentState.end && 
-                    (currentState.shortestPath.length > 0 || currentState.allRouteResults.length > 0)) {
-                    if (id === 'avoidMountain') {
-                        calculatePathCallback(); // 道路設定変更時は再計算
-                    } else if (id === 'carFare30') {
-                        updateResultDisplay(); // 車賃設定変更時は表示更新のみ
-                    }
-                }
-            });
+    try {
+        debugLog.log('道路設定イベントリスナーの設定を開始します');
+        
+        if (typeof drawMapCallback !== 'function' || typeof calculatePathCallback !== 'function') {
+            debugLog.error('コールバック関数が無効です', new Error('Invalid callback functions'));
+            return;
         }
-    });
+        
+        const checkboxes = ['avoidMountain', 'carFare30'];
+        checkboxes.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                debugLog.log(`イベントリスナーを設定: ${id}`);
+                element.addEventListener('change', () => {
+                    try {
+                        debugLog.log(`設定変更: ${id} = ${element.checked}`);
+                        
+                        // 道路設定が変更されたら地図を再描画
+                        drawMapCallback();
+                        
+                        // 既に経路が計算されている場合は再計算または結果表示更新
+                        const currentState = window.currentState;
+                        if (currentState && currentState.start && currentState.end && 
+                            (currentState.shortestPath.length > 0 || currentState.allRouteResults.length > 0)) {
+                            if (id === 'avoidMountain') {
+                                debugLog.log('山道設定変更により経路を再計算します');
+                                calculatePathCallback(); // 道路設定変更時は再計算
+                            } else if (id === 'carFare30') {
+                                debugLog.log('車賃設定変更により表示を更新します');
+                                updateResultDisplay(); // 車賃設定変更時は表示更新のみ
+                            }
+                        }
+                    } catch (error) {
+                        debugLog.error(`設定変更イベント処理中にエラーが発生しました: ${id}`, error);
+                    }
+                });
+            } else {
+                debugLog.warn(`設定要素が見つかりません: ${id}`);
+            }
+        });
+        
+        debugLog.log('道路設定イベントリスナーの設定が完了しました');
+    } catch (error) {
+        debugLog.error('道路設定イベントリスナー設定中にエラーが発生しました', error);
+    }
 }

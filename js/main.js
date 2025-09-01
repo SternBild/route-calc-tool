@@ -92,25 +92,31 @@ function calculatePath() {
         return;
     }
 
-    // 選択された地点がグラフに接続されているかチェック
-    const points = [currentState.start, ...currentState.viaNodes, currentState.end];
-    for (let point of points) {
-        if (!currentState.graph[point] || Object.keys(currentState.graph[point]).length === 0) {
-            const roadSettings = getRoadSettings();
-            let message = `「${point}」${ERROR_MESSAGES.noConnection}`;
-            if (roadSettings.avoidMountain) {
-                message += "\n" + ERROR_MESSAGES.mountainRoadBlocked;
+        // 選択された地点がグラフに接続されているかチェック
+        const points = [currentState.start, ...currentState.viaNodes, currentState.end];
+        for (let point of points) {
+            if (!currentState.graph[point] || Object.keys(currentState.graph[point]).length === 0) {
+                const roadSettings = getRoadSettings();
+                debugLog.warn(`地点 "${point}" への接続がありません`, { point, roadSettings });
+                let message = `「${point}」${ERROR_MESSAGES.noConnection}`;
+                if (roadSettings.avoidMountain) {
+                    message += "\n" + ERROR_MESSAGES.mountainRoadBlocked;
+                }
+                const resultElement = document.getElementById("result");
+                if (!resultElement) {
+                    debugLog.error('結果表示要素が見つかりません', new Error('Element not found: result'));
+                    return;
+                }
+                resultElement.textContent = message;
+                currentState.shortestPath = [];
+                currentState.allRouteResults = [];
+                currentState.showingAllPaths = false;
+                currentState.selectedRouteIndex = 0;
+                currentState.selectedPathIndex = 0;
+                drawMapWrapper();
+                return;
             }
-            document.getElementById("result").textContent = message;
-            currentState.shortestPath = [];
-            currentState.allRouteResults = [];
-            currentState.showingAllPaths = false;
-            currentState.selectedRouteIndex = 0;
-            currentState.selectedPathIndex = 0;
-            drawMapWrapper();
-            return;
         }
-    }
 
     const routeResults = findTopRoutes(points, 3, currentState.graph);
     
