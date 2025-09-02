@@ -1,61 +1,128 @@
-/* 路程計算ツール - スタイルシート */
+/* 路程計算ツール - モダンUIスタイルシート */
+
+/* CSSカスタムプロパティ（変数）定義 */
+:root {
+    /* メインカラーパレット（青系ベース） */
+    --primary-color: #007bff;
+    --primary-dark: #0056b3;
+    --primary-light: #4da3ff;
+    --secondary-color: #6c757d;
+    --secondary-light: #adb5bd;
+    
+    /* グラデーション */
+    --primary-gradient: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    --card-gradient: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    --info-gradient: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    
+    /* 背景色 */
+    --bg-primary: #f8f9fa;
+    --bg-card: #ffffff;
+    --bg-info: #e3f2fd;
+    --bg-controls: #f8f9fa;
+    
+    /* テキストカラー */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #6c757d;
+    
+    /* シャドウ */
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    --shadow-hover: 0 0.5rem 1.5rem rgba(0, 123, 255, 0.25);
+    
+    /* ボーダー */
+    --border-radius: 12px;
+    --border-radius-sm: 8px;
+    --border-radius-lg: 16px;
+    
+    /* フォント */
+    --font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+}
 
 /* ベーススタイル */
 body {
     margin: 0;
     padding: 20px;
-    font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-normal);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
 }
 
 #container {
     max-width: 1400px;
     margin: 0 auto;
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    padding: 20px;
+    background: var(--card-gradient);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* ヘッダー部分 */
 h1 {
     text-align: center;
-    color: #333;
-    margin: 0 0 30px 0;
-    font-size: 28px;
+    color: var(--text-primary);
+    margin: 0 0 40px 0;
+    font-size: 32px;
+    font-weight: var(--font-weight-bold);
     position: relative;
+    background: var(--primary-gradient);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    padding: 10px 0;
 }
 
+/* PDF出力ボタン */
 #printButton {
     position: absolute;
-    top: 0;
+    top: 5px;
     right: 0;
-    padding: 8px 16px;
-    background-color: #6c757d;
+    padding: 12px 20px;
+    background: var(--primary-gradient);
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.2s;
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-family);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 #printButton:hover {
-    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+#printButton .material-symbols-outlined {
+    font-size: 18px;
 }
 
 #version {
-    font-size: 16px;
-    color: #6c757d;
-    font-weight: normal;
-    margin-left: 15px;
-    margin-right: 15px;
+    font-size: 18px;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-light);
+    margin: 0 20px;
 }
 
 /* メインレイアウト */
 #mainContainer {
     display: flex;
-    gap: 20px;
+    gap: 30px;
     align-items: flex-start;
 }
 
@@ -63,106 +130,167 @@ h1 {
 #mapContainer {
     flex-shrink: 0;
     position: relative;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
 }
 
 canvas { 
-    border: 1px solid #ccc;
+    border: none;
     cursor: grab;
+    border-radius: var(--border-radius);
+    transition: transform 0.2s ease;
 }
 
 canvas:active {
     cursor: grabbing;
 }
 
+canvas:hover {
+    transform: scale(1.001);
+}
+
 #zoomInfo {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 5px 10px;
-    border-radius: 5px;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 8px 14px;
+    border-radius: var(--border-radius);
     font-size: 12px;
-    color: #333;
-    border: 1px solid #ccc;
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    border: none;
+    box-shadow: var(--shadow-sm);
     pointer-events: none;
 }
 
 /* サイドパネル */
 #rightPanel {
-    min-width: 300px;
+    min-width: 320px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
+}
+
+/* 共通パネルスタイル */
+#rightPanel > div {
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#rightPanel > div:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* パネル内のh4共通スタイル */
+#rightPanel h4 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: var(--font-weight-medium);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#rightPanel h4 .material-symbols-outlined {
+    font-size: 20px;
 }
 
 /* 情報パネル */
 #info { 
-    padding: 15px;
-    background-color: #e8f4fd;
-    border-radius: 8px;
-    border: 1px solid #b3d9f2;
+    padding: 20px;
+    background: var(--info-gradient);
+    border: 1px solid rgba(33, 150, 243, 0.2);
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.6;
 }
 
 #info h4 {
-    margin: 0 0 10px 0;
-    color: #0056b3;
-    font-size: 16px;
+    color: var(--primary-dark);
+}
+
+#info h4 .material-symbols-outlined {
+    color: var(--primary-color);
 }
 
 /* コントロールパネル */
 #controls {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    border: 1px solid #ddd;
+    gap: 12px;
+    padding: 20px;
+    background: var(--card-gradient);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 #controls h4 {
-    margin: 0 0 10px 0;
-    color: #333;
-    font-size: 16px;
+    color: var(--text-primary);
+}
+
+#controls h4 .material-symbols-outlined {
+    color: var(--primary-color);
 }
 
 #controls button {
-    padding: 10px 15px;
+    padding: 14px 20px;
     border: none;
-    border-radius: 5px;
-    background-color: #007bff;
+    border-radius: var(--border-radius);
+    background: var(--primary-gradient);
     color: white;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.2s;
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-family);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 #controls button:hover:not(:disabled) {
-    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+#controls button:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 #controls button:disabled {
-    background-color: #6c757d;
+    background: var(--secondary-light);
     cursor: not-allowed;
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+#controls button .material-symbols-outlined {
+    font-size: 18px;
 }
 
 /* 道路オプション */
 #roadOptions {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    border: 1px solid #ddd;
+    gap: 15px;
+    padding: 20px;
+    background: var(--card-gradient);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 #roadOptions h4 {
-    margin: 0 15px 0 0;
-    color: #333;
-    font-size: 16px;
+    margin: 0 20px 0 0;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+#roadOptions h4 .material-symbols-outlined {
+    color: var(--primary-color);
 }
 
 #roadOptions label {
@@ -170,146 +298,207 @@ canvas:active {
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
-    color: #333;
+    gap: 8px;
+    color: var(--text-primary);
+    font-weight: var(--font-weight-normal);
+    transition: color 0.2s ease;
+}
+
+#roadOptions label:hover {
+    color: var(--primary-color);
 }
 
 #roadOptions input[type="checkbox"] {
     margin: 0;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
 }
 
 /* 操作説明 */
 #operationInfo {
-    padding: 10px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    font-size: 12px;
-    color: #666;
+    padding: 18px;
+    background: var(--card-gradient);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 13px;
+    color: var(--text-secondary);
 }
 
 #operationInfo h4 {
-    margin: 0 0 5px 0;
-    color: #495057;
-    font-size: 14px;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+
+#operationInfo h4 .material-symbols-outlined {
+    color: var(--primary-color);
 }
 
 /* 結果表示エリア */
 #result {
     width: 100%;
     overflow-x: auto;
-    margin-top: 20px;
-    border-top: 1px solid #ddd;
-    padding-top: 20px;
+    margin-top: 30px;
+    border-top: 2px solid rgba(0, 123, 255, 0.1);
+    padding-top: 30px;
 }
 
 #resultHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
-    padding: 10px 0;
-    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
+    padding: 15px 0;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
 }
 
 #resultHeader h3 {
     margin: 0;
-    color: #333;
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+    font-size: 20px;
 }
 
 #showAllPathsBtn {
-    padding: 8px 16px;
+    padding: 10px 18px;
     border: none;
-    border-radius: 5px;
-    background-color: #007bff;
+    border-radius: var(--border-radius);
+    background: var(--primary-gradient);
     color: white;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.2s;
+    font-weight: var(--font-weight-medium);
+    font-family: var(--font-family);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
 }
 
 #showAllPathsBtn:hover:not(:disabled) {
-    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
 }
 
 #showAllPathsBtn:disabled {
-    background-color: #6c757d;
+    background: var(--secondary-light);
     cursor: not-allowed;
+    transform: none;
 }
 
 #showAllPathsBtn.active {
-    background-color: #28a745;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 }
 
 #showAllPathsBtn.active:hover {
-    background-color: #1e7e34;
+    box-shadow: 0 0.5rem 1.5rem rgba(40, 167, 69, 0.25);
 }
 
 /* 経路リスト */
 .path-list {
-    margin: 10px 0;
+    margin: 15px 0;
 }
 
 .path-item {
-    margin: 5px 0;
-    padding: 10px;
-    border-radius: 5px;
+    margin: 8px 0;
+    padding: 16px;
+    border-radius: var(--border-radius);
     border: 2px solid transparent;
     cursor: pointer;
-    transition: all 0.2s ease;
-    opacity: 0.4;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.5;
+    font-family: var(--font-family);
+    box-shadow: var(--shadow-sm);
 }
 
 .path-item:hover {
-    opacity: 0.7;
-    transform: translateY(-1px);
+    opacity: 0.8;
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
 }
 
 .path-item.rank-1 {
-    background-color: #fff3cd;
-    border-color: #ffeaa7;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-color: rgba(255, 193, 7, 0.3);
 }
 
 .path-item.rank-2 {
-    background-color: #e7f3ff;
-    border-color: #add8e6;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-color: rgba(33, 150, 243, 0.3);
 }
 
 .path-item.rank-3 {
-    background-color: #f0f8e7;
-    border-color: #90ee90;
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    border-color: rgba(76, 175, 80, 0.3);
 }
 
 .path-item.selected {
     opacity: 1.0;
     border-color: #ff6b6b;
-    box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
-    font-weight: bold;
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+    font-weight: var(--font-weight-medium);
+    transform: translateY(-3px);
 }
 
 .path-item.selected:hover {
     opacity: 1.0;
-    transform: none;
+    transform: translateY(-3px);
 }
 
 .rank-badge {
     display: inline-block;
-    padding: 2px 6px;
-    border-radius: 3px;
+    padding: 4px 8px;
+    border-radius: var(--border-radius-sm);
     font-size: 12px;
-    font-weight: bold;
-    margin-right: 5px;
+    font-weight: var(--font-weight-bold);
+    margin-right: 8px;
+    box-shadow: var(--shadow-sm);
 }
 
-.rank-1-badge { background-color: #ffd700; color: #333; }
-.rank-2-badge { background-color: #c0c0c0; color: #333; }
-.rank-3-badge { background-color: #cd7f32; color: white; }
+.rank-1-badge { 
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: var(--text-primary);
+}
+
+.rank-2-badge { 
+    background: linear-gradient(135deg, #c0c0c0 0%, #e0e0e0 100%);
+    color: var(--text-primary);
+}
+
+.rank-3-badge { 
+    background: linear-gradient(135deg, #cd7f32 0%, #d4a574 100%);
+    color: white;
+}
 
 .selected-indicator {
     color: #ff6b6b;
-    font-weight: bold;
-    margin-left: 10px;
+    font-weight: var(--font-weight-bold);
+    margin-left: 12px;
 }
+
+/* アニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#container {
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#rightPanel > div {
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#rightPanel > div:nth-child(1) { animation-delay: 0.1s; }
+#rightPanel > div:nth-child(2) { animation-delay: 0.2s; }
+#rightPanel > div:nth-child(3) { animation-delay: 0.3s; }
+#rightPanel > div:nth-child(4) { animation-delay: 0.4s; }
 
 /* 印刷用スタイル */
 @media print {
@@ -331,6 +520,9 @@ canvas:active {
         font-size: 18px;
         margin: 0 0 5px 0;
         text-align: center;
+        background: none;
+        -webkit-text-fill-color: initial;
+        color: #333;
     }
     #printButton {
         display: none;
@@ -440,6 +632,9 @@ canvas:active {
     .selected-indicator {
         color: #000;
     }
+    .material-symbols-outlined {
+        display: none;
+    }
 }
 
 /* PDF生成用スタイル */
@@ -463,6 +658,9 @@ canvas:active {
     font-size: 18px;
     margin: 0 0 5px 0;
     text-align: center;
+    background: none;
+    -webkit-text-fill-color: initial;
+    color: #333;
 }
 
 .pdf-generation #printButton {
@@ -596,40 +794,46 @@ canvas:active {
     color: #000;
 }
 
+.pdf-generation .material-symbols-outlined {
+    display: none;
+}
+
 /* レスポンシブデザイン */
 @media (max-width: 1400px) {
     body {
-        padding: 10px;
+        padding: 15px;
     }
     #container {
         margin: 0;
-        border-radius: 5px;
+        border-radius: var(--border-radius);
+        padding: 20px;
     }
 }
 
 @media (max-width: 1200px) {
     #mainContainer {
         flex-direction: column;
+        gap: 25px;
     }
     #rightPanel {
         min-width: auto;
         width: 100%;
         flex-direction: row;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 15px;
     }
     #rightPanel > div {
         flex: 1;
-        min-width: 200px;
+        min-width: 250px;
     }
     #controls {
         flex-direction: row;
         flex-wrap: wrap;
-        gap: 5px;
+        gap: 8px;
     }
     #controls button {
         flex: 1;
-        min-width: 120px;
+        min-width: 140px;
     }
     #mapContainer canvas {
         max-width: 100%;
@@ -638,34 +842,44 @@ canvas:active {
 }
 
 @media (max-width: 800px) {
-    #container {
+    body {
         padding: 10px;
+    }
+    #container {
+        padding: 15px;
+    }
+    h1 {
+        font-size: 28px;
+        margin-bottom: 30px;
+    }
+    #printButton {
+        position: static;
+        margin-top: 15px;
+        align-self: center;
     }
     #rightPanel {
         flex-direction: column;
+        gap: 15px;
     }
     #controls {
         flex-direction: column;
+        gap: 10px;
     }
     #controls button {
         width: 100%;
-        margin: 2px 0;
+        margin: 0;
     }
     #roadOptions {
         flex-direction: column;
         align-items: stretch;
+        gap: 12px;
     }
     #roadOptions h4 {
         margin: 0 0 10px 0;
-        color: #333;
-    }
-    #roadOptions label {
-        justify-content: flex-start;
-        color: #333;
     }
     #resultHeader {
         flex-direction: column;
-        gap: 10px;
+        gap: 15px;
         align-items: stretch;
     }
     #resultHeader h3 {
@@ -677,12 +891,21 @@ canvas:active {
     body {
         padding: 5px;
     }
+    #container {
+        padding: 12px;
+    }
     h1 {
         font-size: 24px;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
     }
     #mapContainer canvas {
         width: 100%;
         height: auto;
+    }
+    #rightPanel {
+        gap: 12px;
+    }
+    #rightPanel > div {
+        min-width: auto;
     }
 }
